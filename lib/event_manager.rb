@@ -3,6 +3,7 @@
 require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
+require 'date'
 
 def clean_zipcode(zipcode)
   # if the zip code is exactly five digits, assume that it is ok
@@ -59,6 +60,8 @@ contents = CSV.open(
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
+hours = []
+days = []
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
@@ -69,8 +72,56 @@ contents.each do |row|
 
   number = clean_phone_number(row[:homephone])
 
+  regdate = row[:regdate]
+  date = DateTime.strptime(regdate, '%m/%d/%Y %H:%M').to_time
+  hours << date.strftime("%I %p")
+  days << date.wday
+
   form_letter = erb_template.result(binding)
 
   save_thank_you_letter(id, form_letter)
-  p number
 end
+
+def peak_registration_hours(hours)
+  count = hours.reduce(Hash.new(0)) do |count, hour|
+    count[hour] += 1
+    count
+  end
+  count.each do |k, v|
+    puts "The best time to advertise is #{k}" if v == count.values.max
+  end
+end
+
+def get_name_days(days)
+  days.map do |day_num|
+    case day_num
+    when 0
+      "Sunday"
+    when 1
+      "Monday"
+    when 2
+      "Tuesday"
+    when 3
+      "Wednesday"
+    when 4
+      "Thursday"
+    when 5
+      "Friday"
+    when 6
+      "Saturday"
+    end
+  end
+end
+
+def most_common_day(name_days)
+  days_count = name_days.reduce(Hash.new(0)) do |days_count, num|
+    days_count[num] += 1
+    days_count
+  end
+  days_count.each do |k, v|
+    puts "The most common registration day is #{k}" if v == days_count.values.max
+  end
+end
+
+peak_registration_hours(hours)
+most_common_day(get_name_days(days))
