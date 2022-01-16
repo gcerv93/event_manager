@@ -74,7 +74,7 @@ contents.each do |row|
 
   regdate = row[:regdate]
   date = DateTime.strptime(regdate, '%m/%d/%Y %H:%M').to_time
-  hours << date.strftime("%I %p")
+  hours << date.strftime('%I %p')
   days << date.wday
 
   form_letter = erb_template.result(binding)
@@ -82,11 +82,22 @@ contents.each do |row|
   save_thank_you_letter(id, form_letter)
 end
 
-def peak_registration_hours(hours)
-  count = hours.reduce(Hash.new(0)) do |count, hour|
+def count_hours(hours)
+  hours.reduce(Hash.new(0)) do |count, hour|
     count[hour] += 1
     count
   end
+end
+
+def count_days(name_days)
+  name_days.reduce(Hash.new(0)) do |days_count, num|
+    days_count[num] += 1
+    days_count
+  end
+end
+
+def peak_registration_hours(hours)
+  count = count_hours(hours)
   count.each do |k, v|
     puts "The best time to advertise is #{k}" if v == count.values.max
   end
@@ -114,10 +125,7 @@ def get_name_days(days)
 end
 
 def most_common_day(name_days)
-  days_count = name_days.reduce(Hash.new(0)) do |days_count, num|
-    days_count[num] += 1
-    days_count
-  end
+  days_count = count_days(name_days)
   days_count.each do |k, v|
     puts "The most common registration day is #{k}" if v == days_count.values.max
   end
